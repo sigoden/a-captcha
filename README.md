@@ -10,7 +10,7 @@ $ npm install a-captcha --save
 
 ## Examples
 
-![captcha](./examples/captcha.png)
+![captcha](https://github.com/sigoden/a-captcha/raw/master/examples/captcha.png)
 
 ```js
 const fs = require("fs");
