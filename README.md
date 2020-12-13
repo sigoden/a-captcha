@@ -1,24 +1,24 @@
-# captchajs
+# a-captcha
 
 A Lightweight Pure JavaScript Captcha for Node.js. Inspired By [trek-captcha](https://github.com/trekjs/captcha).
 
 ## Installation
 
 ```
-$ npm install captchajs --save
+$ npm install a-captcha --save
 ```
 
 ## Examples
 
 ```js
-const fs = require('fs')
-const { captcha } = require('captchajs')
+const fs = require("fs");
+const { captcha } = require("a-captcha");
 
 async function main() {
-  const { text, buffer } = await captcha()
-  fs.writeFileSync('captcha.png', buffer);
+  const { text, buffer } = await captcha({ size: 5 });
+  fs.writeFileSync("captcha.png", buffer);
   console.log(text);
 }
 
-main()
+main();
 ```

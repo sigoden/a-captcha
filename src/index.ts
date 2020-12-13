@@ -1,24 +1,22 @@
 import { randomBytes } from "crypto";
 import { PNG } from "pngjs";
-import { WIDTH, HEIGHT, FONTS, LETTERS, SW } from "./constants";
+import { WIDTH, HEIGHT, FONTS, LETTERS, SW, NDOTS } from "./constants";
 import * as effects from "./effects";
 
 export interface Options {
   size?: number;
-  dots?: number;
   useLine?: boolean;
   useBlur?: boolean;
   useHollow?: boolean;
-  useColor?: boolean;
+  fgColor?: number[]
+  bgColor?: number[]
 }
 
 const defaultOptions: Options = {
   size: 5,
-  dots: 100,
   useLine: true,
   useBlur: false,
   useHollow: false,
-  useColor: true,
 };
 
 export interface CaptchaData {
@@ -27,17 +25,44 @@ export interface CaptchaData {
 }
 
 export async function captcha(options = defaultOptions): Promise<CaptchaData> {
+  options = { ...defaultOptions, ...options };
   const { text, image } = await createImage(options);
+  const buffer = await makepng(image, options.fgColor, options.bgColor);
+  return { text: text.toString(), buffer };
+}
+
+export function randomColor(start = 10, end = 200, opacity = 255) {
+  const red = randomInt(start, end);
+  const green = randomInt(start, end);
+  const blue = randomInt(start, end);
+  return [red, green, blue, opacity];
+}
+
+async function makepng(image: Buffer, fgColor = randomColor(), bgColor = [0, 0, 0, 0]): Promise<Buffer> {
+  const data = Buffer.alloc(4 * WIDTH * HEIGHT);
+  const color  = (value = 255, gray) => Math.floor(gray * value / 255);
+  for (let i = 0; i < image.length; i++) {
+    const gray = 255 - image[i];
+    if (gray === 0) {
+      data[4 * i + 0] = bgColor[0] || 0;
+      data[4 * i + 1] = bgColor[1] || 0;
+      data[4 * i + 2] = bgColor[2] || 0;
+      data[4 * i + 3] = bgColor[3] || 0;
+    } else {
+      data[4 * i + 0] = color(fgColor[0], gray);
+      data[4 * i + 1] = color(fgColor[1], gray);
+      data[4 * i + 2] = color(fgColor[2], gray);
+      data[4 * i + 3] = color(fgColor[3], gray);
+    }
+  }
   const png = new PNG({
     width: WIDTH,
     height: HEIGHT,
     bitDepth: 8,
-    colorType: 0,
-    inputColorType: 0,
-    inputHasAlpha: false,
+    colorType: 6,
   });
+  png.data = data;
   return new Promise((resolve, reject)  => {
-    png.data = image;
     png.pack();
     const chunks = [];
     png.on("data", (chunk) => chunks.push(chunk));
@@ -45,17 +70,13 @@ export async function captcha(options = defaultOptions): Promise<CaptchaData> {
       reject(err);
     });
     png.on("end", () => {
-      resolve({ text: text.toString(), buffer: Buffer.concat(chunks) });
+      resolve(Buffer.concat(chunks));
     });
   });
 }
 
-export function png2base64(buffer: Buffer) {
-  return "data:image/jpeg;base64," + buffer.toString("base64");
-}
-
 async function createImage(options: Options) {
-  const { size } = { ...defaultOptions, ...options };
+  const { size } = options;
   const rb = await urandom(size + 200 + 100 * 4 + 1 + 1);
   const text = Buffer.alloc(size);
   const swr = Buffer.alloc(200);
@@ -83,7 +104,7 @@ async function createImage(options: Options) {
   }
 
   effects.line(image, swr, s1);
-  if (options.dots) effects.dots(image, dr, options.dots);
+  effects.dots(image, dr, NDOTS);
   if (options.useBlur) effects.blur(image);
   if (options.useHollow) effects.hollow(image);
 
@@ -140,4 +161,9 @@ function letter(n: number, pos: number, image: Buffer, swr: Buffer, s1: number, 
   }
 
   return mpos;
+}
+
+
+function randomInt(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
