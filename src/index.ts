@@ -4,7 +4,7 @@ import { WIDTH, HEIGHT, FONTS, LETTERS, SW, NDOTS } from "./constants";
 import * as effects from "./effects";
 
 export interface Options {
-  size?: number;
+  length?: number;
   useLine?: boolean;
   useBlur?: boolean;
   useHollow?: boolean;
@@ -13,7 +13,7 @@ export interface Options {
 }
 
 const defaultOptions: Options = {
-  size: 5,
+  length: 5,
   useLine: true,
   useBlur: false,
   useHollow: false,
@@ -76,7 +76,7 @@ async function makepng(image: Buffer, fgColor = randomColor(), bgColor = [0, 0, 
 }
 
 async function createImage(options: Options) {
-  const { size } = options;
+  const { length: size } = options;
   const rb = await urandom(size + 200 + 100 * 4 + 1 + 1);
   const text = Buffer.alloc(size);
   const swr = Buffer.alloc(200);

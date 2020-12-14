@@ -17,7 +17,7 @@ const fs = require("fs");
 const { captcha } = require("a-captcha");
 
 async function main() {
-  const { text, buffer } = await captcha({ size: 5 });
+  const { text, buffer } = await captcha({ length: 5 });
   fs.writeFileSync("captcha.png", buffer);
   console.log(text);
 }
