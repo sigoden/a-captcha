@@ -1,6 +1,6 @@
 import { randomBytes } from "crypto";
 import { PNG } from "pngjs";
-import { WIDTH, HEIGHT, FONTS, LETTERS, SW, NDOTS } from "./constants";
+import { WIDTH, HEIGHT, FONTS, LETTERS, SW } from "./constants";
 import * as effects from "./effects";
 
 export interface Options {
@@ -8,6 +8,7 @@ export interface Options {
   useLine?: boolean;
   useBlur?: boolean;
   useHollow?: boolean;
+  dots?: number;
   fgColor?: number[]
   bgColor?: number[]
 }
@@ -17,6 +18,7 @@ const defaultOptions: Options = {
   useLine: true,
   useBlur: false,
   useHollow: false,
+  dots: 100,
 };
 
 export interface CaptchaData {
@@ -98,13 +100,13 @@ async function createImage(options: Options) {
   let p = 30;
 
   for (let n = 0; n < size; n++) {
-    text[n] %= 25;
+    text[n] %= LETTERS.length - 1;
     p = letter(text[n], p, image, swr, s1, s2);
     text[n] = LETTERS.charCodeAt(text[n]);
   }
 
   effects.line(image, swr, s1);
-  effects.dots(image, dr, NDOTS);
+  effects.dots(image, dr, options.dots);
   if (options.useBlur) effects.blur(image);
   if (options.useHollow) effects.hollow(image);
 
