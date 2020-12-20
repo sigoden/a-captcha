@@ -13,7 +13,7 @@ export interface Options {
   dots?: number;
   fgColor?: number[];
   bgColor?: number[];
-  sw?: number[];
+  sw: number;
 }
 
 const defaultOptions: Options = {
@@ -22,6 +22,7 @@ const defaultOptions: Options = {
   useBlur: false,
   useHollow: false,
   dots: 100,
+  sw: 1,
 };
 
 export interface CaptchaData {
@@ -31,8 +32,7 @@ export interface CaptchaData {
 
 export async function captcha(options = defaultOptions): Promise<CaptchaData> {
   options = { ...defaultOptions, ...options };
-  if (!options.sw) options.sw = SW;
-  const { text, image } = await createImage(options);
+  const { text, image } = await createImage(options, SW.map(v => Math.floor(v / Math.max(1, options.sw))));
   const buffer = await makepng(image, options.fgColor, options.bgColor);
   return { text: text.toString(), buffer };
 }
@@ -81,7 +81,7 @@ async function makepng(image: Buffer, fgColor = randomColor(), bgColor = [0, 0, 
   });
 }
 
-async function createImage(options: Options) {
+async function createImage(options: Options, sw: number[]) {
   const { length: size } = options;
   const rb = await urandom(size + 200 + 100 * 4 + 1 + 1);
   const text = Buffer.alloc(size);
@@ -105,12 +105,12 @@ async function createImage(options: Options) {
 
   for (let n = 0; n < size; n++) {
     text[n] %= LETTERS.length - 1;
-    p = letter(text[n], p, image, options.sw, swr, s1, s2);
+    p = letter(text[n], p, image, sw, swr, s1, s2);
     text[n] = LETTERS.charCodeAt(text[n]);
   }
 
 
-  if (options.useLine) effects.line(image, options.sw, swr, s1);
+  if (options.useLine) effects.line(image, sw, swr, s1);
   if (options.dots > 0) effects.dots(image, dr, Math.min(options.dots, swr.length - 3));
   if (options.useBlur) effects.blur(image);
   if (options.useHollow) effects.hollow(image);
