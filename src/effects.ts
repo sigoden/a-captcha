@@ -1,9 +1,7 @@
-import { SW } from "./constants";
-
-export function line(image: Buffer, swr: Buffer, s1: number) {
+export function line(image: Buffer, sw: number[], swr: Buffer, s1: number) {
   for (let x = 0, sk1 = s1; x < 199; x++) {
     if (sk1 >= 200) sk1 %= 200;
-    const skew = Math.floor(SW[sk1] / 16);
+    const skew = Math.floor(sw[sk1] / 16);
     sk1 += (swr[x] & 0x3) + 1;
     const i = 200 * (45 + skew) + x;
     image[i + 0] = 0;

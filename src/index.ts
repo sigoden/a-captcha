@@ -3,14 +3,17 @@ import { PNG } from "pngjs";
 import { WIDTH, HEIGHT, FONTS, LETTERS, SW } from "./constants";
 import * as effects from "./effects";
 
+export { WIDTH, HEIGHT };
+
 export interface Options {
   length?: number;
   useLine?: boolean;
   useBlur?: boolean;
   useHollow?: boolean;
   dots?: number;
-  fgColor?: number[]
-  bgColor?: number[]
+  fgColor?: number[];
+  bgColor?: number[];
+  sw?: number[];
 }
 
 const defaultOptions: Options = {
@@ -28,6 +31,7 @@ export interface CaptchaData {
 
 export async function captcha(options = defaultOptions): Promise<CaptchaData> {
   options = { ...defaultOptions, ...options };
+  if (!options.sw) options.sw = SW;
   const { text, image } = await createImage(options);
   const buffer = await makepng(image, options.fgColor, options.bgColor);
   return { text: text.toString(), buffer };
@@ -101,12 +105,13 @@ async function createImage(options: Options) {
 
   for (let n = 0; n < size; n++) {
     text[n] %= LETTERS.length - 1;
-    p = letter(text[n], p, image, swr, s1, s2);
+    p = letter(text[n], p, image, options.sw, swr, s1, s2);
     text[n] = LETTERS.charCodeAt(text[n]);
   }
 
-  effects.line(image, swr, s1);
-  effects.dots(image, dr, options.dots);
+
+  if (options.useLine) effects.line(image, options.sw, swr, s1);
+  if (options.dots > 0) effects.dots(image, dr, Math.min(options.dots, swr.length - 3));
   if (options.useBlur) effects.blur(image);
   if (options.useHollow) effects.hollow(image);
 
@@ -121,7 +126,7 @@ function urandom(size: number): Promise<Buffer> {
   });
 }
 
-function letter(n: number, pos: number, image: Buffer, swr: Buffer, s1: number, s2: number) {
+function letter(n: number, pos: number, image: Buffer, sw: number[], swr: Buffer, s1: number, s2: number) {
   const l = image.length;
   const t = FONTS[n];
   let r = 200 * 16 + pos;
@@ -148,11 +153,11 @@ function letter(n: number, pos: number, image: Buffer, swr: Buffer, s1: number, 
     }
 
     if (sk1 >= 200) sk1 = sk1 % 200;
-    const skew = Math.floor(SW[sk1] / 16);
+    const skew = Math.floor(sw[sk1] / 16);
     sk1 += (swr[pos + i - r] & 0x1) + 1;
 
     if (sk2 >= 200) sk2 %= 200;
-    const skewh = Math.floor(SW[sk2] / 70);
+    const skewh = Math.floor(sw[sk2] / 70);
     sk2 += swr[row] & 0x1;
 
     const x = i + skew * 200 + skewh;
